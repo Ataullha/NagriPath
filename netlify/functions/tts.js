@@ -31,13 +31,39 @@ const SPACE = process.env.TTS_SPACE || 'Ataullha/Sylheti_Nagri_TTS';
 const HF_TOKEN = process.env.HF_TOKEN || process.env.HUGGING_FACE_TOKEN || '';
 
 /**
- * Endpoint names to try, in order.
+ * Only predict_syl is called. It takes ROMAN Sylheti text, so the app converts
+ * every script to Roman first (see lib/nagri.ts).
  *
- * predict_syl takes ROMAN Sylheti text, and it is the one that works, so the
- * app converts every script to Roman before calling this (see lib/nagri.ts).
- * predict_nagri is kept only as a fallback in case the Space changes.
+ * predict_nagri is deliberately NOT used as a fallback. Feeding it Nagri text
+ * makes its embedding layer index out of range, which raises a CUDA
+ * device-side assert. That does not fail politely: it kills the GPU worker, and
+ * every later request on the Space returns "No CUDA GPUs are available" until
+ * someone restarts it. One bad click would take the whole demo down, so we
+ * never call it.
  */
-const FUNCTIONS = ['predict_syl', 'predict_nagri'];
+const FUNCTIONS = ['predict_syl'];
+
+/** Mirrors sanitizeRoman/padForModel in lib/nagri.ts, as a server-side net. */
+const MIN_WORDS = 3;
+const MIN_CHARS = 8;
+const MAX_REPEATS = 6;
+
+function prepareText(input) {
+  const clean = String(input)
+    .toLowerCase()
+    .replace(/[^a-z0-9 .,!?'-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!clean) return '';
+
+  let out = clean;
+  let repeats = 1;
+  while ((out.split(' ').length < MIN_WORDS || out.length < MIN_CHARS) && repeats < MAX_REPEATS) {
+    out = `${out} ${clean}`;
+    repeats += 1;
+  }
+  return out;
+}
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -167,6 +193,20 @@ function describeModelError(message) {
         : 'Set an HF_TOKEN environment variable on the host to raise the limit. See netlify/functions/tts.js for details.',
     };
   }
+  if (/no cuda gpus are available|device-side assert/i.test(message)) {
+    return {
+      status: 503,
+      error: 'The speech model on Hugging Face has crashed and needs a restart.',
+      hint: 'Open the Space and use Settings -> Restart this Space. Until then no audio can be generated.',
+    };
+  }
+  if (/longer sentence|too short/i.test(message)) {
+    return {
+      status: 400,
+      error: 'That was too short for the model.',
+      hint: 'Try a few words together.',
+    };
+  }
   if (/gpu|cuda|out of memory/i.test(message)) {
     return {
       status: 503,
@@ -185,11 +225,16 @@ exports.handler = async (event) => {
 
   let text = '';
   try {
-    text = String(JSON.parse(event.body || '{}').text || '').trim();
+    text = prepareText(JSON.parse(event.body || '{}').text || '');
   } catch {
     return reply(400, { error: 'Malformed request body.' });
   }
-  if (!text) return reply(400, { error: 'No text supplied.' });
+  if (!text) {
+    return reply(400, {
+      error: 'Nothing to say.',
+      hint: 'The text contained no characters the model can read.',
+    });
+  }
 
   const host = spaceHost(SPACE);
 

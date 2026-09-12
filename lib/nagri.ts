@@ -377,29 +377,31 @@ export function detectScript(text: string): Script {
 /**
  * Everything the model receives goes through here.
  *
- * The working endpoint takes Syloti Nagri text, so every script is converted
- * to Nagri before it is sent:
+ * The working endpoint (predict_syl) takes ROMAN Sylheti text, so every script
+ * is converted to Roman before it is sent:
  *
- *     Bangla  ->  Nagri  ->  model
- *     Roman   ->  Nagri  ->  model
- *     Nagri   ->  model
+ *     Bangla  ->  Nagri  ->  Roman  ->  model
+ *     Nagri   ->  Roman  ->  model
+ *     Roman   ->  model
  *
- * `roman` is returned only so the interface can show a pronunciation hint.
+ * `nagri` is returned so the interface can also show the Nagri spelling.
  */
-export function toSpeakable(text: string): { nagri: string; roman: string; from: Script } {
+export function toSpeakable(text: string): { roman: string; nagri: string; from: Script } {
   const from = detectScript(text);
   if (from === 'bangla') {
     const nagri = banglaToNagri(text);
-    return { nagri, roman: nagriToRoman(nagri), from };
-  }
-  if (from === 'roman') {
-    const nagri = romanToNagri(text);
-    return { nagri, roman: nagriToRoman(nagri), from };
+    return { roman: nagriToRoman(nagri), nagri, from };
   }
   if (from === 'nagri') {
-    return { nagri: text, roman: nagriToRoman(text), from };
+    return { roman: nagriToRoman(text), nagri: text, from };
   }
-  return { nagri: '', roman: '', from };
+  if (from === 'roman') {
+    // normalise via Nagri and back, so typed Roman and converted Bangla
+    // reach the model in exactly the same spelling
+    const nagri = romanToNagri(text);
+    return { roman: nagriToRoman(nagri), nagri, from };
+  }
+  return { roman: '', nagri: '', from };
 }
 
 export const EXAMPLES: { bangla: string; gloss: string }[] = [

@@ -39,8 +39,18 @@ const INHERENT = 'o';
 
 export interface Letter {
   char: string;      // the Nagri glyph
-  name: string;      // its traditional name
-  roman: string;     // what we send to the model to hear it
+  name: string;      // its traditional name, e.g. "Ko"
+  /**
+   * The bare Latin sound sent to the model when this letter is tapped:
+   * k, kh, g ... rather than the syllable ko, kho, go.
+   *
+   * This affects the Learn tab ONLY. Inside a word the inherent vowel is
+   * still needed — see nagriWordToRoman — or ꠇꠦꠝꠘ would come out as "kemn"
+   * instead of "kemon".
+   *
+   * To go back to syllables, put the vowel back here (k -> ko).
+   */
+  roman: string;
   bangla: string;    // nearest Bangla letter, for learners
   kind: 'vowel' | 'consonant';
 }
@@ -52,33 +62,33 @@ export const LETTERS: Letter[] = [
   { char: N.E,   name: 'E',    roman: 'e',   bangla: 'এ', kind: 'vowel' },
   { char: N.O,   name: 'O',    roman: 'o',   bangla: 'ও', kind: 'vowel' },
 
-  { char: N.KO,   name: 'Ko',   roman: 'ko',   bangla: 'ক',  kind: 'consonant' },
-  { char: N.KHO,  name: 'Kho',  roman: 'kho',  bangla: 'খ',  kind: 'consonant' },
-  { char: N.GO,   name: 'Go',   roman: 'go',   bangla: 'গ',  kind: 'consonant' },
-  { char: N.GHO,  name: 'Gho',  roman: 'gho',  bangla: 'ঘ',  kind: 'consonant' },
-  { char: N.CO,   name: 'Co',   roman: 'co',   bangla: 'চ',  kind: 'consonant' },
-  { char: N.CHO,  name: 'Cho',  roman: 'cho',  bangla: 'ছ',  kind: 'consonant' },
-  { char: N.JO,   name: 'Jo',   roman: 'jo',   bangla: 'জ',  kind: 'consonant' },
-  { char: N.JHO,  name: 'Jho',  roman: 'jho',  bangla: 'ঝ',  kind: 'consonant' },
-  { char: N.TTO,  name: 'Tto',  roman: 'to',   bangla: 'ট',  kind: 'consonant' },
-  { char: N.TTHO, name: 'Ttho', roman: 'tho',  bangla: 'ঠ',  kind: 'consonant' },
-  { char: N.DDO,  name: 'Ddo',  roman: 'do',   bangla: 'ড',  kind: 'consonant' },
-  { char: N.DDHO, name: 'Ddho', roman: 'dho',  bangla: 'ঢ',  kind: 'consonant' },
-  { char: N.TO,   name: 'To',   roman: 'to',   bangla: 'ত',  kind: 'consonant' },
-  { char: N.THO,  name: 'Tho',  roman: 'tho',  bangla: 'থ',  kind: 'consonant' },
-  { char: N.DO,   name: 'Do',   roman: 'do',   bangla: 'দ',  kind: 'consonant' },
-  { char: N.DHO,  name: 'Dho',  roman: 'dho',  bangla: 'ধ',  kind: 'consonant' },
-  { char: N.NO,   name: 'No',   roman: 'no',   bangla: 'ন',  kind: 'consonant' },
-  { char: N.PO,   name: 'Po',   roman: 'po',   bangla: 'প',  kind: 'consonant' },
-  { char: N.PHO,  name: 'Pho',  roman: 'pho',  bangla: 'ফ',  kind: 'consonant' },
-  { char: N.BO,   name: 'Bo',   roman: 'bo',   bangla: 'ব',  kind: 'consonant' },
-  { char: N.BHO,  name: 'Bho',  roman: 'bho',  bangla: 'ভ',  kind: 'consonant' },
-  { char: N.MO,   name: 'Mo',   roman: 'mo',   bangla: 'ম',  kind: 'consonant' },
-  { char: N.RO,   name: 'Ro',   roman: 'ro',   bangla: 'র',  kind: 'consonant' },
-  { char: N.LO,   name: 'Lo',   roman: 'lo',   bangla: 'ল',  kind: 'consonant' },
-  { char: N.RRO,  name: 'Rro',  roman: 'rho',  bangla: 'ড়',  kind: 'consonant' },
-  { char: N.SO,   name: 'So',   roman: 'so',   bangla: 'স',  kind: 'consonant' },
-  { char: N.HO,   name: 'Ho',   roman: 'ho',   bangla: 'হ',  kind: 'consonant' },
+  { char: N.KO,   name: 'Ko',   roman: 'k',    bangla: 'ক',  kind: 'consonant' },
+  { char: N.KHO,  name: 'Kho',  roman: 'kh',   bangla: 'খ',  kind: 'consonant' },
+  { char: N.GO,   name: 'Go',   roman: 'g',    bangla: 'গ',  kind: 'consonant' },
+  { char: N.GHO,  name: 'Gho',  roman: 'gh',   bangla: 'ঘ',  kind: 'consonant' },
+  { char: N.CO,   name: 'Co',   roman: 'c',    bangla: 'চ',  kind: 'consonant' },
+  { char: N.CHO,  name: 'Cho',  roman: 'ch',   bangla: 'ছ',  kind: 'consonant' },
+  { char: N.JO,   name: 'Jo',   roman: 'j',    bangla: 'জ',  kind: 'consonant' },
+  { char: N.JHO,  name: 'Jho',  roman: 'jh',   bangla: 'ঝ',  kind: 'consonant' },
+  { char: N.TTO,  name: 'Tto',  roman: 't',    bangla: 'ট',  kind: 'consonant' },
+  { char: N.TTHO, name: 'Ttho', roman: 'th',   bangla: 'ঠ',  kind: 'consonant' },
+  { char: N.DDO,  name: 'Ddo',  roman: 'd',    bangla: 'ড',  kind: 'consonant' },
+  { char: N.DDHO, name: 'Ddho', roman: 'dh',   bangla: 'ঢ',  kind: 'consonant' },
+  { char: N.TO,   name: 'To',   roman: 't',    bangla: 'ত',  kind: 'consonant' },
+  { char: N.THO,  name: 'Tho',  roman: 'th',   bangla: 'থ',  kind: 'consonant' },
+  { char: N.DO,   name: 'Do',   roman: 'd',    bangla: 'দ',  kind: 'consonant' },
+  { char: N.DHO,  name: 'Dho',  roman: 'dh',   bangla: 'ধ',  kind: 'consonant' },
+  { char: N.NO,   name: 'No',   roman: 'n',    bangla: 'ন',  kind: 'consonant' },
+  { char: N.PO,   name: 'Po',   roman: 'p',    bangla: 'প',  kind: 'consonant' },
+  { char: N.PHO,  name: 'Pho',  roman: 'ph',   bangla: 'ফ',  kind: 'consonant' },
+  { char: N.BO,   name: 'Bo',   roman: 'b',    bangla: 'ব',  kind: 'consonant' },
+  { char: N.BHO,  name: 'Bho',  roman: 'bh',   bangla: 'ভ',  kind: 'consonant' },
+  { char: N.MO,   name: 'Mo',   roman: 'm',    bangla: 'ম',  kind: 'consonant' },
+  { char: N.RO,   name: 'Ro',   roman: 'r',    bangla: 'র',  kind: 'consonant' },
+  { char: N.LO,   name: 'Lo',   roman: 'l',    bangla: 'ল',  kind: 'consonant' },
+  { char: N.RRO,  name: 'Rro',  roman: 'rh',   bangla: 'ড়',  kind: 'consonant' },
+  { char: N.SO,   name: 'So',   roman: 's',    bangla: 'স',  kind: 'consonant' },
+  { char: N.HO,   name: 'Ho',   roman: 'h',    bangla: 'হ',  kind: 'consonant' },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -202,7 +212,7 @@ const BN_CONS: Record<string, string> = {
   'প': N.PO, 'ফ': N.PHO, 'ব': N.BO, 'ভ': N.BHO, 'ম': N.MO,
   'য': N.JO, 'র': N.RO, 'ল': N.LO,
   'শ': N.SO, 'ষ': N.SO, 'স': N.SO, 'হ': N.HO,
-  'ড়': N.RRO, 'ঢ়': N.RRO, 'য়': N.E,
+  '\u09DC': N.RRO, '\u09DD': N.RRO, '\u09DF': N.E,   // ড় ঢ় য় as single code points
   'ৎ': N.TO,
 };
 
@@ -221,10 +231,27 @@ const BN_DIGIT: Record<string, string> = {
   '৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9',
 };
 
+/**
+ * Bangla letters carrying a nukta (য় ড় ঢ়) exist in two Unicode forms: one
+ * precomposed character, or a base letter followed by the combining nukta
+ * U+09BC. Phone keyboards emit either.
+ *
+ * NFC does NOT merge them, because these compositions are on Unicode's
+ * composition exclusion list. So they are folded by hand here. Without this
+ * the character loop consumes the base letter first and drops the nukta, and
+ * ১০টায় came out as "10taj" instead of "10tae".
+ */
+function foldNukta(input: string): string {
+  return input
+    .replace(/\u09A1\u09BC/g, '\u09DC')   // ড + nukta -> ড়
+    .replace(/\u09A2\u09BC/g, '\u09DD')   // ঢ + nukta -> ঢ়
+    .replace(/\u09AF\u09BC/g, '\u09DF');  // য + nukta -> য়
+}
+
 /** Rule-based Bangla to Syloti Nagri. Approximate, as the scripts are not 1:1. */
 export function banglaToNagri(input: string): string {
   let out = '';
-  for (const ch of Array.from(input)) {
+  for (const ch of Array.from(foldNukta(input))) {
     if (BN_CONS[ch]) { out += BN_CONS[ch]; continue; }
     if (BN_VOWEL[ch]) { out += BN_VOWEL[ch]; continue; }
     if (BN_SIGN[ch]) { out += BN_SIGN[ch]; continue; }

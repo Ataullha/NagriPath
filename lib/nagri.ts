@@ -363,6 +363,55 @@ export function romanToNagri(input: string): string {
   return out;
 }
 
+/* ------------------------------------------------------------------ */
+/* Preparing text for the model                                        */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Keep only characters the Roman Sylheti model can tokenise.
+ *
+ * Anything unexpected (a stray Bangla letter, a Nagri poetry mark, an emoji)
+ * can land outside the model's vocabulary. On this Space that does not fail
+ * politely — it triggers a CUDA index assert that takes the whole GPU worker
+ * down until the Space is restarted. So the input is filtered here first.
+ */
+export function sanitizeRoman(input: string): string {
+  return input
+    .toLowerCase()
+    .replace(/[^a-z0-9 .,!?'-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+const MIN_WORDS = 3;
+const MIN_CHARS = 8;
+const MAX_REPEATS = 6;
+
+/**
+ * The Space rejects very short input ("Please enter a longer sentence"),
+ * which would make every single letter in the Learn tab fail. Short text is
+ * therefore repeated until it is long enough — so a learner tapping one
+ * letter hears that letter sounded out several times, which is what you want
+ * when learning an alphabet anyway.
+ *
+ * Normal sentences are already long enough and pass through untouched.
+ */
+export function padForModel(input: string): string {
+  const clean = sanitizeRoman(input);
+  if (!clean) return '';
+
+  let out = clean;
+  let repeats = 1;
+  while (
+    (out.split(' ').length < MIN_WORDS || out.length < MIN_CHARS) &&
+    repeats < MAX_REPEATS
+  ) {
+    out = `${out} ${clean}`;
+    repeats += 1;
+  }
+  return out;
+}
+
 export type Script = 'nagri' | 'bangla' | 'roman' | 'empty';
 
 /** Work out which script the user typed, so we can pick the right pipeline. */

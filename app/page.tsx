@@ -168,7 +168,7 @@ function LearnTab() {
 
   const play = async (letter: Letter) => {
     setSelected(letter);
-    const ok = await speak(letter.char, letter.char);
+    const ok = await speak(letter.roman, letter.char);
     if (ok) {
       setHeard((prev) => {
         if (prev.includes(letter.char)) return prev;
@@ -211,7 +211,7 @@ function LearnTab() {
             <strong>{selected.name}</strong>
             <span className="muted small">
               <span className="bn">Bangla {selected.bangla}</span> · {selected.kind} ·
-              {' '}pronounced &ldquo;{selected.roman}&rdquo;
+              {' '}sent to the model as &ldquo;{selected.roman}&rdquo;
             </span>
           </div>
           <button className="btn btn-terra" onClick={() => play(selected)} disabled={busy !== null}>
@@ -253,7 +253,7 @@ function ListenTab() {
         <h2>Type anything, hear it in Sylheti</h2>
         <p className="muted small">
           Write in Bangla, in Nagri, or in Roman letters. Whatever you type is converted to
-          Nagri first, which is the script the model reads, so all three work.
+          the Roman form the model reads, so all three scripts work.
         </p>
 
         <div style={{ marginTop: 14 }}>
@@ -272,8 +272,8 @@ function ListenTab() {
         <div className="btnrow">
           <button
             className="btn btn-primary"
-            disabled={busy !== null || !prepared.nagri}
-            onClick={() => speak(prepared.nagri)}
+            disabled={busy !== null || !prepared.roman}
+            onClick={() => speak(prepared.roman)}
           >
             {busy ? <span className="spinner" /> : '▶'} Hear it spoken
           </button>
@@ -284,11 +284,11 @@ function ListenTab() {
           <div className="result">
             {prepared.nagri && (
               <>
-                <h3>SENT TO THE MODEL · IN NAGRI</h3>
+                <h3>IN NAGRI</h3>
                 <div className="nagri-out">{prepared.nagri}</div>
               </>
             )}
-            <h3 style={{ marginTop: prepared.nagri ? 12 : 0 }}>PRONUNCIATION</h3>
+            <h3 style={{ marginTop: prepared.nagri ? 12 : 0 }}>SENT TO THE MODEL</h3>
             <div className="roman-out">{prepared.roman}</div>
             {url && <audio controls src={url} />}
           </div>
@@ -309,8 +309,9 @@ function ListenTab() {
       </div>
 
       <div className="note">
-        Nagri input goes straight to the model. Bangla and Roman are transliterated into Nagri
-        first, using the rules in lib/nagri.ts.
+        The model reads Roman Sylheti, so Bangla and Nagri are transliterated first using the
+        rules in lib/nagri.ts. Typed Roman goes through the same normalisation, so all three
+        scripts reach the model in one consistent spelling.
       </div>
     </section>
   );
@@ -369,10 +370,10 @@ function ConvertTab() {
           <div className={dir === 'bn2ng' ? 'nagri-out' : 'nagri-out bn'}>
             {output || <span className="muted">…</span>}
           </div>
-          <h3 style={{ marginTop: 12 }}>PRONUNCIATION</h3>
+          <h3 style={{ marginTop: 12 }}>SENT TO THE MODEL</h3>
           <div className="roman-out">{roman || '…'}</div>
           <div className="btnrow">
-            <button className="btn btn-terra" disabled={busy !== null || !nagri} onClick={() => speak(nagri)}>
+            <button className="btn btn-terra" disabled={busy !== null || !roman} onClick={() => speak(roman)}>
               {busy ? <span className="spinner" /> : '▶'} Hear it
             </button>
             <button

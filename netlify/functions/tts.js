@@ -37,7 +37,7 @@ const HF_TOKEN = process.env.HF_TOKEN || process.env.HUGGING_FACE_TOKEN || '';
  * app converts every script to Roman before calling this (see lib/nagri.ts).
  * predict_nagri is kept only as a fallback in case the Space changes.
  */
-const FUNCTIONS = ['/predict_syl', '/predict_nagri'];
+const FUNCTIONS = ['predict_syl', 'predict_nagri'];
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',

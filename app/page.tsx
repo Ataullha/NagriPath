@@ -9,6 +9,7 @@ import {
   nagriToRoman,
   toSpeakable,
   detectScript,
+  padForModel,
   type Letter,
 } from '@/lib/nagri';
 import { synthesize, TtsError, SPACE_ID } from '@/lib/tts';
@@ -168,7 +169,7 @@ function LearnTab() {
 
   const play = async (letter: Letter) => {
     setSelected(letter);
-    const ok = await speak(letter.roman, letter.char);
+    const ok = await speak(padForModel(letter.roman), letter.char);
     if (ok) {
       setHeard((prev) => {
         if (prev.includes(letter.char)) return prev;
@@ -187,6 +188,8 @@ function LearnTab() {
         <h2>All 32 letters, one at a time</h2>
         <p className="muted small">
           Tap any letter to hear it spoken by the model. Vowels first, then consonants.
+          Each letter is repeated a few times, because the model needs more than one
+          syllable to produce clean audio.
         </p>
 
         <div className="lettergrid">
@@ -211,7 +214,7 @@ function LearnTab() {
             <strong>{selected.name}</strong>
             <span className="muted small">
               <span className="bn">Bangla {selected.bangla}</span> · {selected.kind} ·
-              {' '}sent to the model as &ldquo;{selected.roman}&rdquo;
+              {' '}sent to the model as &ldquo;{padForModel(selected.roman)}&rdquo;
             </span>
           </div>
           <button className="btn btn-terra" onClick={() => play(selected)} disabled={busy !== null}>
@@ -273,7 +276,7 @@ function ListenTab() {
           <button
             className="btn btn-primary"
             disabled={busy !== null || !prepared.roman}
-            onClick={() => speak(prepared.roman)}
+            onClick={() => speak(padForModel(prepared.roman))}
           >
             {busy ? <span className="spinner" /> : '▶'} Hear it spoken
           </button>
@@ -373,7 +376,7 @@ function ConvertTab() {
           <h3 style={{ marginTop: 12 }}>SENT TO THE MODEL</h3>
           <div className="roman-out">{roman || '…'}</div>
           <div className="btnrow">
-            <button className="btn btn-terra" disabled={busy !== null || !roman} onClick={() => speak(roman)}>
+            <button className="btn btn-terra" disabled={busy !== null || !roman} onClick={() => speak(padForModel(roman))}>
               {busy ? <span className="spinner" /> : '▶'} Hear it
             </button>
             <button

@@ -1,0 +1,13 @@
+# Render blueprint. In Render: New -> Blueprint, point it at this repo.
+# Or create a Web Service manually with the same build/start commands.
+services:
+  - type: web
+    name: nagri-path
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: node server.js
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: "20"

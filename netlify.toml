@@ -1,0 +1,39 @@
+# ---------------------------------------------------------------
+# Source project, for deploying from Git.
+#
+# This app is a STATIC EXPORT (next.config.mjs -> output: 'export').
+# It does not need the Next.js Runtime plugin. If Netlify auto-added
+# it, remove it once:
+#   Site configuration -> Build & deploy -> Build plugins
+#   -> Next.js Runtime -> Remove
+# Leaving it installed makes the build fail with
+# "Your publish directory cannot be the same as the base directory".
+# ---------------------------------------------------------------
+
+[build]
+  command = "npm run build"
+  publish = "out"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[functions]
+  directory = "netlify/functions"
+
+# Gradio blocks cross-origin browser calls, so the browser talks to this
+# function instead, and the function talks to Hugging Face.
+[[redirects]]
+  from = "/api/tts"
+  to = "/.netlify/functions/tts"
+  status = 200
+  force = true
+
+[[headers]]
+  for = "/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
